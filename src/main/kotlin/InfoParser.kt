@@ -6,7 +6,7 @@ import java.net.URL
 import kotlin.math.roundToInt
 
 /**
-* Parsed Info
+* результат парсинга данных
 * @param name          Наименование
 * @param ogrn          ОГРН
 * @param opf           ОПФ
@@ -45,6 +45,10 @@ data class Data(
         var addressMN: String = ""      // Местонахождение (адрес) регистрации организации
 )
 
+/**
+ * Класс парсера данных
+ * @param apiKey Ключ доступа к API
+ */
 class InfoParser(val apiKey: String) {
     private val urlCard = "https://zachestnyibiznesapi.ru/paid/data/card"
     private val urlArbitration = "https://zachestnyibiznesapi.ru/paid/data/court-arbitration"
@@ -216,6 +220,11 @@ class InfoParser(val apiKey: String) {
         }
     }
 
+    /**
+     * Загрузка и парсинг данных
+     * @param id Документ
+     * @return результат парсинга [Data]
+     */
     fun loadInfo(id: String): Data{
         val data = Data()
         val regionId = id.substring(0..1).toInt()
@@ -226,7 +235,7 @@ class InfoParser(val apiKey: String) {
         parseFsFns(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}"))
         parseZakupki(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}}&page=1&top_type=participant"))
         parseSearch(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}"))
-
+        data.addressMN
         return data
     }
 
