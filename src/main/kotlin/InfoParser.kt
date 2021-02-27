@@ -5,24 +5,44 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.roundToInt
 
-
+/**
+* Parsed Info
+* @param name          Наименование
+* @param ogrn          ОГРН
+* @param opf           ОПФ
+* @param regionId      Код региона
+* @param date          Дата ОГРНИП/ОГРН
+* @param capital       Сумма уставного капитала
+* @param arbitration   Участвует как ответчик или как третье лицо в арбитраже
+* @param exLists       СуммаДолга
+* @param actives       Изменение - Чистые активы
+* @param proceed       Изменение - Выручка
+* @param debt          Сумма недоимки и задолженности по пеням и штрафам
+* @param zakupExp      Данных о поставщиках и заказчиках более 10
+* @param bankrupt      Деятелность приостановлена
+* @param inRNP         Факт недобросовестного поставщика
+* @param massAddr      В поиске более 10 записей
+* @param address       Адрес (место нахождения) юридического лица
+* @param addressMN     Местонахождение (адрес) регистрации организации
+*/
 data class Data(
-        var name: String = "",
-        var ogrn: String = "",
-        var opf: Int? = null,
-        var regionId: Int? = null,
-        var date: String = "",
-        var capital: Int? = 0,
-        var arbitration: Int = 0,
-        var exLists: Int? = null,
-        var actives: Int? = null,
-        var proceed: Int? = null,
-        var debt: Int? = null,
-        var zakupExp: Boolean = false,
-        var bankrupt: Boolean = false,
-        var inRNP: Boolean = false,
-        var massAddr: Boolean = false,
-        var address: String = ""
+        var name: String = "",          // Наименование
+        var ogrn: String = "",          // ОГРН
+        var opf: Int? = null,           // ОПФ
+        var regionId: Int? = null,      // Код региона
+        var date: String = "",          // Дата ОГРНИП/ОГРН
+        var capital: Int? = 0,          // Сумма уставного капитала
+        var arbitration: Int = 0,       // Участвует как ответчик или как третье лицо в арбитраже
+        var exLists: Int? = null,       // СуммаДолга
+        var actives: Int? = null,       // Изменение - Чистые активы
+        var proceed: Int? = null,       // Изменение - Выручка
+        var debt: Int? = null,          // Сумма недоимки и задолженности по пеням и штрафам
+        var zakupExp: Boolean = false,  // Данных о поставщиках и заказчиках более 10
+        var bankrupt: Boolean = false,  // Деятелность приостановлена
+        var inRNP: Boolean = false,     // Факт недобросовестного поставщика
+        var massAddr: Boolean = false,  // В поиске более 10 записей
+        var address: String = "",       // Адрес (место нахождения) юридического лица
+        var addressMN: String = ""      // Местонахождение (адрес) регистрации организации
 )
 
 class InfoParser(val apiKey: String) {
@@ -62,7 +82,7 @@ class InfoParser(val apiKey: String) {
         return body
     }
 
-
+    // Получение списка судебных дел компании.
     fun parseArbitration(data: Data, jsonText: String, inn: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         val exact = body.getJSONObject("точно")
@@ -98,6 +118,7 @@ class InfoParser(val apiKey: String) {
         return true
     }
 
+    // Получение карточки компании
     fun parseCard(data: Data, jsonText: String, regionId: Int): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
 
@@ -136,6 +157,7 @@ class InfoParser(val apiKey: String) {
         return true
     }
 
+    // Получение списка исполнительных производств компани
     fun parseFssp(data: Data, jsonText: String): Boolean {
         val body = parseJsonToArray(jsonText) ?: return false
 
@@ -148,28 +170,35 @@ class InfoParser(val apiKey: String) {
         return true
     }
 
+    // Получение финансовой отчётности по данным ФНС
     fun parseFsFns(data: Data, jsonText: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
-
-        val proceedAttrs = body.optJSONObject("Документ")?.optJSONObject("ФинРез")?.optJSONObject("Выруч")?.optJSONObject("@attributes")
+        val doc = body.optJSONObject("Документ")
+        val proceedAttrs = doc.optJSONObject("ФинРез")?.optJSONObject("Выруч")?.optJSONObject("@attributes")
         proceedAttrs?.let {
             data.proceed = if (proceedAttrs.has("На31ДекОтч")) proceedAttrs.getInt("На31ДекОтч") else null
         }
 
-        val activesAttrs = body.optJSONObject("Документ")?.optJSONObject("ОтчетИзмКап")?.optJSONObject("ЧистАктив")?.optJSONObject("@attributes")
+        val activesAttrs = doc.optJSONObject("ОтчетИзмКап")?.optJSONObject("ЧистАктив")?.optJSONObject("@attributes")
         activesAttrs?.let {
             data.actives = if (activesAttrs.has("На31ДекОтч")) activesAttrs.getInt("На31ДекОтч") else null
         }
 
+        val addressMN = doc.optJSONObject("НПЮЛ")?.optString("АдрМН")
+        addressMN?.let{
+            data.addressMN = addressMN
+        }
         return true
     }
 
+    // Получение данных о поставщиках и заказчика
     fun parseZakupki(data: Data, jsonText: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         data.zakupExp = body.optInt("total") > 0
         return true
     }
 
+    // Получение списка компаний
     fun parseSearch(data: Data, jsonText: String): Boolean {
         if(data.address == null)
             return false
