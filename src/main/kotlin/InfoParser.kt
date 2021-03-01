@@ -6,7 +6,7 @@ import java.net.URL
 import kotlin.math.roundToInt
 
 /**
-* результат парсинга данных
+* Результат парсинга данных
 * @param name          Наименование
 * @param ogrn          ОГРН
 * @param opf           ОПФ
@@ -26,23 +26,23 @@ import kotlin.math.roundToInt
 * @param addressMN     Местонахождение (адрес) регистрации организации
 */
 data class Data(
-        var name: String = "",          // Наименование
-        var ogrn: String = "",          // ОГРН
-        var opf: Int? = null,           // ОПФ
-        var regionId: Int? = null,      // Код региона
-        var date: String = "",          // Дата ОГРНИП/ОГРН
-        var capital: Int? = 0,          // Сумма уставного капитала
-        var arbitration: Int = 0,       // Участвует как ответчик или как третье лицо в арбитраже
-        var exLists: Int? = null,       // СуммаДолга
-        var actives: Int? = null,       // Изменение - Чистые активы
-        var proceed: Int? = null,       // Изменение - Выручка
-        var debt: Int? = null,          // Сумма недоимки и задолженности по пеням и штрафам
-        var zakupExp: Boolean = false,  // Данных о поставщиках и заказчиках более 10
-        var bankrupt: Boolean = false,  // Деятелность приостановлена
-        var inRNP: Boolean = false,     // Факт недобросовестного поставщика
-        var massAddr: Boolean = false,  // В поиске более 10 записей
-        var address: String = "",       // Адрес (место нахождения) юридического лица
-        var addressMN: String = ""      // Местонахождение (адрес) регистрации организации
+        var name: String = "",
+        var ogrn: String = "",
+        var opf: Int? = null,
+        var regionId: Int? = null,
+        var date: String = "",
+        var capital: Int? = 0,
+        var arbitration: Int = 0,
+        var exLists: Int? = null,
+        var actives: Int? = null,
+        var proceed: Int? = null,
+        var debt: Int? = null,
+        var zakupExp: Boolean = false,
+        var bankrupt: Boolean = false,
+        var inRNP: Boolean = false,
+        var massAddr: Boolean = false,
+        var address: String = "",
+        var addressMN: String = ""
 )
 
 /**
@@ -58,10 +58,15 @@ class InfoParser(val apiKey: String) {
     private val urlZakup = "https://zachestnyibiznesapi.ru/paid/data/zakupki-top"
     private val urlSearch = "https://zachestnyibiznesapi.ru/paid/data/search"
 
+    /**
+     * Проверка статуса ответа API
+     * Получение body в виде [JSONArray]
+     * @param jsonText ответ от API
+     * @return [JSONArray]
+     */
     private fun parseJsonToArray(jsonText: String): JSONArray? {
         val jsonData = JSONObject(jsonText)
-        if (jsonData.optString("status") != "200")
-            return null
+        if (jsonData.optString("status") != "200") return null
 
         val body: JSONArray
         try {
@@ -72,6 +77,12 @@ class InfoParser(val apiKey: String) {
         return body
     }
 
+    /**
+     * Проверка статуса ответа API
+     * Получение body в виде [JSONObject]
+     * @param jsonText ответ от API
+     * @return [JSONObject]
+     */
     private fun parseJsonToObject(jsonText: String): JSONObject? {
         val jsonData = JSONObject(jsonText)
         if (jsonData.optString("status") != "200")
@@ -86,7 +97,11 @@ class InfoParser(val apiKey: String) {
         return body
     }
 
-    // Получение списка судебных дел компании.
+    /**
+     *Получение списка судебных дел компании.
+     * @param data [Data] объект для записи результата
+     * @param jsonText ответ API
+     */
     fun parseArbitration(data: Data, jsonText: String, inn: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         val exact = body.getJSONObject("точно")
@@ -99,30 +114,33 @@ class InfoParser(val apiKey: String) {
                 val defendants = delo.optJSONArray("Ответчик")
                 val others = delo.optJSONArray("Третье лицо")
 
-                if (defendants != null) {
+                defendants?.let{
                     for (i in 0 until defendants.length()) {
                         if (defendants.getJSONObject(i).optString("ИНН") == inn) {
-                            if (delo.has("СуммаИска"))
-                                arbSum += delo.optInt("СуммаИска", 0)
+                            if (delo.has("СуммаИска")) arbSum += delo.optInt("СуммаИска", 0)
                             break
                         }
                     }
                 }
-                if (others != null)
+                others?.let{
                     for (i in 0 until others.length()) {
                         if (others.getJSONObject(i).optString("ИНН") == inn) {
-                            if (delo.has("СуммаИска"))
-                                arbSum += delo.optInt("СуммаИска", 0)
+                            if (delo.has("СуммаИска")) arbSum += delo.optInt("СуммаИска", 0)
                             break
                         }
                     }
+                }
             }
             data.arbitration = arbSum
         }
         return true
     }
 
-    // Получение карточки компании
+    /**
+     *Получение карточки компании
+     * @param data [Data] объект для записи результата
+     * @param jsonText ответ API
+     */
     fun parseCard(data: Data, jsonText: String, regionId: Int): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
 
@@ -148,10 +166,11 @@ class InfoParser(val apiKey: String) {
             if (debts != null)
                 for (i in 0 until debts.length()) {
                     val debtsByYear = debts.getJSONObject(i).optJSONArray("НедоимЗадолж")
-                    if (debtsByYear != null)
+                    debtsByYear?.let {
                         for (j in 0 until debtsByYear.length()) {
                             debtSum += debtsByYear.getJSONObject(j).optString("ОбщСумНедоим").replace(',', '.').replace(" ", "").toFloat().toInt()
                         }
+                    }
                 }
             data.debt = debtSum
             data.bankrupt = body.optString("Активность") == "В стадии ликвидации" || body.optString("Активность") == "Ликвидировано"
@@ -161,7 +180,11 @@ class InfoParser(val apiKey: String) {
         return true
     }
 
-    // Получение списка исполнительных производств компани
+    /**
+    Получение списка исполнительных производств компани
+     * @param data [Data] объект для записи результата
+     * @param jsonText ответ API
+     */
     fun parseFssp(data: Data, jsonText: String): Boolean {
         val body = parseJsonToArray(jsonText) ?: return false
 
@@ -174,7 +197,11 @@ class InfoParser(val apiKey: String) {
         return true
     }
 
-    // Получение финансовой отчётности по данным ФНС
+    /**
+     *Получение финансовой отчётности по данным ФНС
+     * @param data [Data] объект для записи результата
+     * @param jsonText ответ API
+     */
     fun parseFsFns(data: Data, jsonText: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         val doc = body.optJSONObject("Документ")
@@ -195,23 +222,34 @@ class InfoParser(val apiKey: String) {
         return true
     }
 
-    // Получение данных о поставщиках и заказчика
+    /**
+     *Получение данных о поставщиках и заказчика
+     * @param data [Data] объект для записи результата
+     * @param jsonText ответ API
+     */
     fun parseZakupki(data: Data, jsonText: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         data.zakupExp = body.optInt("total") > 0
         return true
     }
 
-    // Получение списка компаний
+    /**
+     * Получение списка компаний
+     * @param data [Data] объект для записи результата
+     * @param jsonText ответ API
+     */
     fun parseSearch(data: Data, jsonText: String): Boolean {
-        if(data.address == null)
-            return false
         val body = parseJsonToObject(jsonText) ?: return false
         data.massAddr = body.getInt("total") > 10
         return true
     }
 
-    fun loadURL(url: String): String{
+    /**
+     * Синхронный запрос GET
+     * @param url URL запроса
+     * @return СТрока ответа сервера
+     */
+    private fun loadURL(url: String): String{
         return URL(url).run {
             openConnection().run {
                 this as HttpURLConnection
@@ -230,13 +268,12 @@ class InfoParser(val apiKey: String) {
         val regionId = id.substring(0..1).toInt()
 
         parseCard(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}"), regionId)
-        parseArbitration(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}"), id)
-        parseFssp(data, loadURL("${urlCard}?api_key=${apiKey}&id=${data.ogrn}"))
-        parseFsFns(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}"))
-        parseZakupki(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}}&page=1&top_type=participant"))
-        parseSearch(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}"))
-        data.addressMN
+        parseArbitration(data, loadURL("${urlArbitration}?api_key=${apiKey}&id=${id}"), id)
+        parseFssp(data, loadURL("${urlFssp}?api_key=${apiKey}&id=${data.ogrn}"))
+        parseFsFns(data, loadURL("${urlFsFns}?api_key=${apiKey}&id=${id}"))
+        parseZakupki(data, loadURL("${urlZakup}?api_key=${apiKey}&id=${id}}&page=1&top_type=participant"))
+        parseSearch(data, loadURL("${urlSearch}?api_key=${apiKey}&id=${id}"))
+
         return data
     }
-
 }
