@@ -133,20 +133,20 @@ class Zakupki {
 
             val doc = Jsoup.parse(response.text)
             val inn = doc.select("table.orderInfo a:contains(ИНН)")
-            if(inn.isEmpty()){
+            if (inn.isEmpty()) {
                 return false
             }
             val r = Regex("""ИНН (\d+)""").find(inn.text())
-            if(r?.groups?.size != 2){
+            if (r?.groups?.size != 2) {
                 return false
             }
-            data.vendorInn = r.groups[1].value
+            data.vendorInn = r.groups[1]?.value ?: ""
             var address: Elements
-            address = doc.select("span:contains(Место доставки товара, выполнения работы)")
+            address = doc.select("td:contains(Место доставки товара, выполнения работы)")
             if (address.isNotEmpty()) {
                 data.dealAddress = address.next().text()
             } else {
-                address = doc.select("span:contains(Адрес места нахождения)")
+                address = doc.select("td:contains(Адрес места нахождения)")
                 if (address.isNotEmpty()) {
                     data.dealAddress = address.next().text()
                 }
@@ -154,7 +154,7 @@ class Zakupki {
 
             return true
         }
-            return false
+        return false
     }
 
     /**
