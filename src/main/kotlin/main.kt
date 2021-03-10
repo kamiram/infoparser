@@ -36,13 +36,18 @@ fun Any.prettyPrint(): String {
 }
 
 fun main(args: Array<String>) {
-    val parser = InfoParser("5I8ngX5xmDJFKPxBz-0vpfia-4ZLjcWe")
-    val data = Data()
-    parser.parseCard(data, {}.javaClass.getResource("card.json").readText(), 12345)
-    parser.parseArbitration(data, {}.javaClass.getResource("court-arbitration.json").readText(), "123456")
-    parser.parseFssp(data, {}.javaClass.getResource("fssp.json").readText())
-    parser.parseFsFns(data, {}.javaClass.getResource("fs-fns.json").readText())
-    println(data.prettyPrint())
-    val data2 = parser.loadInfo("661585678654")
-    println(data2.prettyPrint())
+    val zakupki = Zakupki()
+    var zdata: ZakupkiData?
+//    zdata = zakupki.getInfo("1001200001020000028") // 44
+//    println(zdata?.prettyPrint())
+//    zdata = zakupki.getInfo("32110063506") // 223
+    zdata = zakupki.getInfo("0373100113913000010") // 94
+    println(zdata?.prettyPrint())
+    return
+
+    val zachestnyibiznes = Zachestnyibiznes("5I8ngX5xmDJFKPxBz-0vpfia-4ZLjcWe")
+    val zdata2 = zachestnyibiznes.loadInfo("661585678654")
+    println(zdata2?.prettyPrint())
+
+
 }

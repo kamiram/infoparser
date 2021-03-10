@@ -6,7 +6,7 @@ import java.net.URL
 import kotlin.math.roundToInt
 
 /**
-* Результат парсинга данных
+* Результат парсинга данных zachestnyibiznesapi.ru
 * @param name          Наименование
 * @param ogrn          ОГРН
 * @param opf           ОПФ
@@ -25,7 +25,7 @@ import kotlin.math.roundToInt
 * @param address       Адрес (место нахождения) юридического лица
 * @param addressMN     Местонахождение (адрес) регистрации организации
 */
-data class Data(
+data class ZachestnyibiznesData(
         var name: String = "",
         var ogrn: String = "",
         var opf: Int? = null,
@@ -46,10 +46,10 @@ data class Data(
 )
 
 /**
- * Класс парсера данных
+ * Класс парсера данных zachestnyibiznesapi.ru
  * @param apiKey Ключ доступа к API
  */
-class InfoParser(val apiKey: String) {
+class Zachestnyibiznes(val apiKey: String) {
     private val urlCard = "https://zachestnyibiznesapi.ru/paid/data/card"
     private val urlArbitration = "https://zachestnyibiznesapi.ru/paid/data/court-arbitration"
     private val urlFssp = "https://zachestnyibiznesapi.ru/paid/data/fssp"
@@ -102,7 +102,7 @@ class InfoParser(val apiKey: String) {
      * @param data [Data] объект для записи результата
      * @param jsonText ответ API
      */
-    fun parseArbitration(data: Data, jsonText: String, inn: String): Boolean {
+    fun parseArbitration(data: ZachestnyibiznesData, jsonText: String, inn: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         val exact = body.getJSONObject("точно")
 
@@ -141,7 +141,7 @@ class InfoParser(val apiKey: String) {
      * @param data [Data] объект для записи результата
      * @param jsonText ответ API
      */
-    fun parseCard(data: Data, jsonText: String, regionId: Int): Boolean {
+    fun parseCard(data: ZachestnyibiznesData, jsonText: String, regionId: Int): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
 
         if (body.has("НаимВидИП")) {
@@ -185,7 +185,7 @@ class InfoParser(val apiKey: String) {
      * @param data [Data] объект для записи результата
      * @param jsonText ответ API
      */
-    fun parseFssp(data: Data, jsonText: String): Boolean {
+    fun parseFssp(data: ZachestnyibiznesData, jsonText: String): Boolean {
         val body = parseJsonToArray(jsonText) ?: return false
 
         var exSum = 0
@@ -202,7 +202,7 @@ class InfoParser(val apiKey: String) {
      * @param data [Data] объект для записи результата
      * @param jsonText ответ API
      */
-    fun parseFsFns(data: Data, jsonText: String): Boolean {
+    fun parseFsFns(data: ZachestnyibiznesData, jsonText: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         val doc = body.optJSONObject("Документ")
         val proceedAttrs = doc.optJSONObject("ФинРез")?.optJSONObject("Выруч")?.optJSONObject("@attributes")
@@ -227,7 +227,7 @@ class InfoParser(val apiKey: String) {
      * @param data [Data] объект для записи результата
      * @param jsonText ответ API
      */
-    fun parseZakupki(data: Data, jsonText: String): Boolean {
+    fun parseZakupki(data: ZachestnyibiznesData, jsonText: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         data.zakupExp = body.optInt("total") > 0
         return true
@@ -238,7 +238,7 @@ class InfoParser(val apiKey: String) {
      * @param data [Data] объект для записи результата
      * @param jsonText ответ API
      */
-    fun parseSearch(data: Data, jsonText: String): Boolean {
+    fun parseSearch(data: ZachestnyibiznesData, jsonText: String): Boolean {
         val body = parseJsonToObject(jsonText) ?: return false
         data.massAddr = body.getInt("total") > 10
         return true
@@ -263,8 +263,8 @@ class InfoParser(val apiKey: String) {
      * @param id Документ
      * @return результат парсинга [Data]
      */
-    fun loadInfo(id: String): Data{
-        val data = Data()
+    fun loadInfo(id: String): ZachestnyibiznesData?{
+        val data = ZachestnyibiznesData()
         val regionId = id.substring(0..1).toInt()
 
         parseCard(data, loadURL("${urlCard}?api_key=${apiKey}&id=${id}"), regionId)

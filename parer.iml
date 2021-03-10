@@ -50,5 +50,8 @@
     <orderEntry type="library" name="KotlinJavaRuntime" level="project" />
     <orderEntry type="library" name="KotlinJavaRuntime (2)" level="project" />
     <orderEntry type="library" name="org.json:json:20201115" level="project" />
+    <orderEntry type="library" name="khttp-1.0.0" level="project" />
+    <orderEntry type="library" name="jsoup-1.13.1" level="project" />
+    <orderEntry type="library" name="jsoup-1.13.1-javadoc" level="project" />
   </component>
 </module>
