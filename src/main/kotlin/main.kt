@@ -37,13 +37,14 @@ fun Any.prettyPrint(): String {
 
 fun main(args: Array<String>) {
     val zakupki = Zakupki()
-    var zdata: ZakupkiData?
-//    zdata = zakupki.getInfo("1001200001020000028") // 44
-//    println(zdata?.prettyPrint())
-//    zdata = zakupki.getInfo("32110063506") // 223
+    var zdata: ZakupkiData? = null
+    zdata = zakupki.getInfo("1001200001020000028") // 44
+    println(zdata?.prettyPrint())
+    zdata = zakupki.getInfo("32110063506") // 223
+    println(zdata?.prettyPrint())
     zdata = zakupki.getInfo("0373100113913000010") // 94
     println(zdata?.prettyPrint())
-    return
+
 
     val zachestnyibiznes = Zachestnyibiznes("5I8ngX5xmDJFKPxBz-0vpfia-4ZLjcWe")
     val zdata2 = zachestnyibiznes.loadInfo("661585678654")
